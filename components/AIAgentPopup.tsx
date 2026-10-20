@@ -1,10 +1,24 @@
 "use client";
 import AIIcon from './AIIcon';
 import { useState, useRef } from 'react';
-import { GoogleGenAI } from "@google/genai";
 
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+async function getGeminiAnswer(prompt: string): Promise<string> {
+  const response = await fetch("/api/gemini", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ prompt }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Gemini request failed.");
+  }
+
+  return data.text || "__NO_RESPONSE__";
+}
 
 export default function AIAgentPopup() {
   const [showAgent, setShowAgent] = useState(false);
@@ -21,11 +35,7 @@ export default function AIAgentPopup() {
     // Add agriculture context to Gemini API request
     const prompt = `You are an agriculture expert AI agent. Answer agriculture-related questions and provide advice.\nUser: ${inputText}`;
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-      });
-      let answer = response.text;
+     let answer = await getGeminiAnswer(prompt);
     if (!answer || answer.trim().toLowerCase() === 'no response.') {
       answer = '__NO_RESPONSE__';
     }
@@ -75,11 +85,7 @@ export default function AIAgentPopup() {
         Respond with a concise and helpful answer.
         `;
       try {
-        const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: prompt,
-        });
-        let answer = response.text;
+       let answer = await getGeminiAnswer(prompt);
         if (!answer || answer.trim().toLowerCase() === 'no response.') {
           answer = '__NO_RESPONSE__';
         }
